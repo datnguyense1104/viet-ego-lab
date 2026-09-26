@@ -312,7 +312,22 @@
     toastTimer = setTimeout(() => t.classList.remove("is-show"), 2400);
   }
 
+  /* ---------- Anonymous page-view beacon for the admin analytics ---------- */
+  function trackView() {
+    if (!/^https?:$/.test(location.protocol) || !navigator.sendBeacon) return;
+    let vid;
+    try {
+      vid = localStorage.getItem("vid");
+      if (!vid) localStorage.setItem("vid", (vid = crypto.randomUUID()));
+    } catch {
+      vid = crypto.randomUUID(); // storage blocked: count this view as a one-off visitor
+    }
+    const payload = JSON.stringify({ vid, path: location.pathname, ref: document.referrer });
+    navigator.sendBeacon("/api/track", new Blob([payload], { type: "application/json" }));
+  }
+
   initHero();
+  trackView();
   // Product-dependent UI waits for the live catalog (or the built-in fallback).
   loadProducts().then(() => {
     renderCollections();

@@ -110,22 +110,125 @@
   });
 
   /* ---------- Dashboard ---------- */
+  // Metrics shown as tabs above the line chart; `key` matches analytics_daily/analytics_totals columns.
+  const compact = (n) => Intl.NumberFormat("vi-VN", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+  const METRICS = [
+    { key: "visitors", label: "Người dùng", format: (v) => Number(v).toLocaleString("vi-VN") },
+    { key: "views", label: "Lượt xem trang", format: (v) => Number(v).toLocaleString("vi-VN") },
+    { key: "orders", label: "Đơn hàng", format: (v) => Number(v).toLocaleString("vi-VN") },
+    { key: "sales", label: "Doanh số", format: (v, axis) => (axis ? compact(v) : money(v)) },
+  ];
+  let activeMetric = "visitors";
+  let dashData = null;
+  let lineDraw = null;
+  let rtTimer = null;
+  const dayLabel = (d) => new Date(d + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+  const countryName = (() => {
+    const names = new Intl.DisplayNames(["vi"], { type: "region" });
+    return (code) => { try { return code ? names.of(code) : "Không rõ"; } catch { return code; } };
+  })();
+
+  function deltaHtml(cur, prev) {
+    if (!prev) return `<span class="delta delta--flat">${cur ? "mới" : "–"}</span>`;
+    const pct = ((cur - prev) / prev) * 100;
+    const dir = Math.abs(pct) < 0.5 ? "flat" : pct > 0 ? "up" : "down";
+    const arrow = { up: "↑", down: "↓", flat: "→" }[dir];
+    return `<span class="delta delta--${dir}">${arrow} ${Math.abs(pct).toFixed(1)}% so với kỳ trước</span>`;
+  }
+
+  function renderMetricTabs() {
+    const { totals } = dashData;
+    $("#metricTabs").innerHTML = METRICS.map((m) => `
+      <button class="metric-tab" role="tab" data-metric="${m.key}" aria-selected="${m.key === activeMetric}">
+        <span class="metric-tab__label">${m.label}</span>
+        <span class="metric-tab__value">${esc(m.format(totals.current[m.key]))}</span>
+        ${deltaHtml(totals.current[m.key], totals.previous[m.key])}
+      </button>`).join("");
+  }
+
+  function renderLine() {
+    const { daily, days } = dashData;
+    const metric = METRICS.find((m) => m.key === activeMetric);
+    const prev = daily.slice(0, days), cur = daily.slice(days);
+    const opts = {
+      labels: cur.map((r) => dayLabel(r.day)),
+      prevLabels: prev.map((r) => dayLabel(r.day)),
+      current: cur.map((r) => Number(r[metric.key])),
+      previous: prev.map((r) => Number(r[metric.key])),
+      format: metric.format,
+      aria: `${metric.label} theo ngày, ${days} ngày qua so với kỳ trước`,
+    };
+    const host = $("#lineChart");
+    host.innerHTML = "";
+    lineDraw = Charts.line(host, opts);
+    $("#lineTable").innerHTML = table(
+      ["Ngày", metric.label, "Kỳ trước"],
+      cur.map((r, i) => `<tr><td>${opts.labels[i]}</td><td>${esc(metric.format(opts.current[i]))}</td><td>${esc(metric.format(opts.previous[i]))}</td></tr>`).reverse(),
+      "Chưa có dữ liệu."
+    );
+  }
+
+  $("#metricTabs").addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-metric]");
+    if (!tab || !dashData) return;
+    activeMetric = tab.dataset.metric;
+    renderMetricTabs();
+    renderLine();
+  });
+  $("#rangeSelect").addEventListener("change", () => loadDashboard().catch((err) => toast(err.message)));
+
+  async function loadRealtime() {
+    const rt = must(await db.rpc("analytics_realtime"));
+    $("#rtActive").textContent = rt.active.toLocaleString("vi-VN");
+    const host = $("#rtChart");
+    host.innerHTML = "";
+    Charts.columns(host, {
+      values: rt.minutes,
+      label: (i) => (i === 29 ? "Phút này" : `${29 - i} phút trước`),
+      aria: `Người dùng mỗi phút trong 30 phút qua, tổng ${rt.active}`,
+    });
+    $("#rtCountries").innerHTML = rt.countries.length
+      ? rt.countries.map((c) => `<tr><td>${esc(countryName(c.country))}</td><td>${c.n}</td></tr>`).join("")
+      : `<tr><td colspan="2" class="muted">Chưa có ai đang truy cập.</td></tr>`;
+    $("#rtUpdated").textContent = "Cập nhật lúc " + new Date().toLocaleTimeString("vi-VN");
+  }
+
   async function loadDashboard() {
-    const [orders, products, subs] = await Promise.all([
-      db.from("orders").select("id, code, customer_name, total, status, created_at").order("created_at", { ascending: false }).then(must),
-      db.from("products").select("id", { count: "exact", head: true }).eq("is_active", true),
-      db.from("subscribers").select("email", { count: "exact", head: true }),
+    const days = Number($("#rangeSelect").value);
+    $("#legendCur").textContent = `${days} ngày qua`;
+    // Head-only count queries return { count, error } instead of rows.
+    const count = (q) => q.then(({ count: c, error }) => { if (error) throw error; return c ?? 0; });
+    const [daily, totals, orders, activeProducts, newOrders, subscribers] = await Promise.all([
+      db.rpc("analytics_daily", { p_days: days }).then(must),
+      db.rpc("analytics_totals", { p_days: days }).then(must),
+      db.from("orders").select("id, code, customer_name, total, status, created_at").order("created_at", { ascending: false }).limit(8).then(must),
+      count(db.from("products").select("id", { count: "exact", head: true }).eq("is_active", true)),
+      count(db.from("orders").select("id", { count: "exact", head: true }).eq("status", "new")),
+      count(db.from("subscribers").select("email", { count: "exact", head: true })),
     ]);
-    const revenue = orders.filter((o) => o.status === "done").reduce((s, o) => s + o.total, 0);
+    dashData = {
+      days,
+      daily,
+      totals: Object.fromEntries(totals.map((t) => [t.period, t])),
+    };
+    renderMetricTabs();
+    renderLine();
+
     const stats = [
-      ["Đơn mới cần xử lý", orders.filter((o) => o.status === "new").length],
-      ["Tổng số đơn", orders.length],
-      ["Doanh thu (đơn hoàn thành)", money(revenue)],
-      ["Sản phẩm đang bán", products.count ?? 0],
-      ["Người đăng ký nhận tin", subs.count ?? 0],
+      ["Đơn mới cần xử lý", newOrders],
+      ["Sản phẩm đang bán", activeProducts],
+      ["Người đăng ký nhận tin", subscribers],
     ];
     $("#stats").innerHTML = stats.map(([l, v]) => `<div class="stat"><div class="stat__label">${l}</div><div class="stat__value">${esc(v)}</div></div>`).join("");
-    $("#recentOrders").innerHTML = ordersTable(orders.slice(0, 8), false);
+    $("#recentOrders").innerHTML = ordersTable(orders, false);
+
+    await loadRealtime();
+    clearInterval(rtTimer);
+    rtTimer = setInterval(() => {
+      // Refresh only while the dashboard is visible.
+      if ($('[data-panel="dashboard"]').hidden || document.hidden) return;
+      loadRealtime().catch(() => {});
+    }, 60000);
   }
 
   /* ---------- Orders ---------- */

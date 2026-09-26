@@ -51,7 +51,44 @@
 
     <main class="main">
       <section data-panel="dashboard">
-        <h2>Tổng quan</h2>
+        <div class="panel-head">
+          <h2>Tổng quan</h2>
+          <select id="rangeSelect" aria-label="Khoảng thời gian">
+            <option value="7">7 ngày qua</option>
+            <option value="28">28 ngày qua</option>
+            <option value="90">90 ngày qua</option>
+          </select>
+        </div>
+
+        <div class="dash">
+          <!-- Period metrics: each tab switches the line chart -->
+          <div class="card">
+            <div class="metric-tabs" id="metricTabs" role="tablist"></div>
+            <div class="chart" id="lineChart"></div>
+            <div class="legend">
+              <span><i class="key"></i><span id="legendCur">7 ngày qua</span></span>
+              <span><i class="key key--prev"></i>Kỳ trước</span>
+            </div>
+            <details class="table-view">
+              <summary>Xem dạng bảng</summary>
+              <div id="lineTable"></div>
+            </details>
+          </div>
+
+          <!-- Realtime -->
+          <div class="card realtime">
+            <p class="card__label">Người dùng hoạt động trong 30 phút qua</p>
+            <p class="hero-num" id="rtActive">–</p>
+            <p class="card__label">Người dùng mỗi phút</p>
+            <div class="chart" id="rtChart"></div>
+            <table class="mini">
+              <thead><tr><th>Quốc gia</th><th>Người dùng</th></tr></thead>
+              <tbody id="rtCountries"></tbody>
+            </table>
+            <p class="muted small" id="rtUpdated"></p>
+          </div>
+        </div>
+
         <div class="stats" id="stats"></div>
         <h3>Đơn hàng gần đây</h3>
         <div id="recentOrders"></div>
@@ -96,6 +133,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="../js/config.js"></script>
+  <script src="charts.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

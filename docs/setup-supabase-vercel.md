@@ -15,6 +15,7 @@
 2. Vào **SQL Editor**, chạy lần lượt toàn bộ nội dung:
    - `supabase/schema.sql` (bảng, phân quyền, hàm tạo đơn, bucket ảnh)
    - `supabase/seed.sql` (12 sản phẩm ban đầu)
+   - `supabase/analytics.sql` (thống kê truy cập cho biểu đồ ở `/admin`; ghi lượt xem ẩn danh qua `/api/track`, không lưu IP)
    Hai file chạy lại nhiều lần vẫn an toàn.
 
 ## 2. Tạo tài khoản admin
