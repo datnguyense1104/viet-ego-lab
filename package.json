@@ -1,0 +1,6 @@
+{
+  "name": "viet-ego-lab-web",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" }
+}

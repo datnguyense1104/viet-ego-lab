@@ -1,0 +1,4 @@
+# Not needed at runtime; keep them off the public deployment.
+supabase
+docs
+plans
