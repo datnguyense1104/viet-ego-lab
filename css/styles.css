@@ -158,6 +158,9 @@ p { margin: 0 0 1em; }
 .manifesto__text { padding: clamp(48px, 7vw, 112px); align-self: center; }
 .manifesto blockquote { margin: 0 0 32px; font-family: var(--serif); font-size: clamp(28px, 3.4vw, 46px); line-height: 1.25; }
 .manifesto .eyebrow { color: var(--gold); letter-spacing: .3em; }
+/* Portrait photo (2:3): narrower image column at the photo's own ratio so no bottle is cropped. */
+.manifesto--portrait { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); min-height: 0; }
+.manifesto--portrait .frame { aspect-ratio: 2 / 3; min-height: 0; }
 
 /* ---------- Product cards / grid ---------- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 48px 24px; }
