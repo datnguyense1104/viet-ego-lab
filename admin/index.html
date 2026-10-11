@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Quản trị — Việt Ego Lab</title>
-  <link rel="icon" type="image/png" href="../images/logo-wordmark.png" />
+  <link rel="icon" type="image/png" href="/images/logo-wordmark.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
 </head>
 <body>
   <!-- Login -->
   <section class="login" id="loginView" hidden>
     <form class="login__card" id="loginForm">
-      <img src="../images/logo-wordmark.png" alt="Việt Ego Lab" class="login__logo" />
+      <img src="/images/logo-wordmark.png" alt="Việt Ego Lab" class="login__logo" />
       <h1>Trang quản trị</h1>
       <label>Email<input type="email" name="email" required autocomplete="username" /></label>
       <label>Mật khẩu<input type="password" name="password" required autocomplete="current-password" /></label>
@@ -35,7 +35,7 @@
   <!-- App -->
   <div class="app" id="appView" hidden>
     <aside class="side">
-      <img src="../images/logo-wordmark.png" alt="Việt Ego Lab" class="side__logo" />
+      <img src="/images/logo-wordmark.png" alt="Việt Ego Lab" class="side__logo" />
       <nav class="side__nav" id="tabs">
         <button data-tab="dashboard" class="is-active">Tổng quan</button>
         <button data-tab="orders">Đơn hàng</button>
@@ -45,7 +45,7 @@
       </nav>
       <div class="side__foot">
         <span id="userEmail"></span>
-        <a href="../" target="_blank" rel="noopener">Xem cửa hàng ↗</a>
+        <a href="/" target="_blank" rel="noopener">Xem cửa hàng ↗</a>
         <button id="logoutBtn">Đăng xuất</button>
       </div>
     </aside>
@@ -142,8 +142,8 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="../js/config.js"></script>
-  <script src="charts.js"></script>
-  <script src="admin.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/admin/charts.js"></script>
+  <script src="/admin/admin.js"></script>
 </body>
 </html>

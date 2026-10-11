@@ -503,7 +503,7 @@
         <td><span class="badge badge--${STATUS_BADGE[a.status]}">${esc(ARTICLE_STATUS[a.status])}</span></td>
         <td>${a.published_at ? dateTime(a.published_at) : "—"}</td>
         <td class="row-actions">
-          <a class="link" href="../article.html?slug=${encodeURIComponent(a.slug)}" target="_blank" rel="noopener">Xem</a>
+          <a class="link" href="/article.html?slug=${encodeURIComponent(a.slug)}" target="_blank" rel="noopener">Xem</a>
           <button class="link" data-edit-article="${a.id}">Sửa</button>
           <button class="link" data-delete-article="${a.id}">Xoá</button>
         </td>
