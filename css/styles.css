@@ -170,7 +170,20 @@ p { margin: 0 0 1em; }
 .spec summary { cursor: pointer; padding: 16px 0; font-size: 12px; text-transform: uppercase; letter-spacing: .14em; list-style: none; display: flex; justify-content: space-between; }
 .spec summary::after { content: "+"; font-size: 18px; line-height: 1; }
 .spec details[open] summary::after { content: "−"; }
-.spec .spec__body { padding-bottom: 16px; white-space: pre-line; }
+.spec .spec__body { padding-bottom: 16px; font-size: 15px; }
+.spec .family { margin-bottom: 14px; }
+.tier { padding: 12px 0; border-top: 1px dashed var(--line); }
+.tier:first-of-type { border-top: 0; padding-top: 0; }
+.tier strong { font-family: var(--serif); font-size: 19px; font-weight: 600; display: block; margin-bottom: 2px; }
+.tier p { margin: 0; color: var(--muted); }
+.usage { margin: 0; padding-left: 18px; }
+.usage li { margin-bottom: 6px; }
+.info { display: grid; grid-template-columns: minmax(120px, 40%) 1fr; margin: 0; }
+.info dt, .info dd { margin: 0; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.info dt { color: var(--muted); padding-right: 12px; }
+.info .full { grid-column: 1 / -1; }
+/* Long inspiration lines are clamped on cards; the full text is on the product page. */
+.card__desc { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .tbd { color: var(--muted); font-style: italic; }
 .qty { display: inline-flex; border: 1px solid var(--line); width: max-content; background: var(--surface); }
 .qty button { width: 40px; height: 44px; }

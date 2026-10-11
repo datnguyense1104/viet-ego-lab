@@ -422,11 +422,23 @@
         <label>Bộ sưu tập<input name="collection" maxlength="80" value="${esc(p.collection || "")}" /></label>
         <label>Nhóm hương<input name="scent_family" maxlength="80" value="${esc(p.scent_family || "")}" /></label>
         <label>Thứ tự hiển thị<input name="sort_order" type="number" value="${esc(p.sort_order)}" /></label>
-        <label class="full">Các nốt hương đã xác nhận<input name="notes" maxlength="200" value="${esc(p.notes || "")}" /></label>
+        <label class="full">Các nốt hương đã xác nhận
+          <textarea name="notes" rows="7" maxlength="3000">${esc(p.notes || "")}</textarea>
+          <span class="muted">Mỗi tầng hương một khối, cách nhau một dòng trống. Dòng đầu là tên tầng, vd "Hương đầu – Sớm mai trên đồng lúa", dòng sau là mô tả.</span>
+        </label>
         <label class="full">Mô tả cảm hứng mùi hương (ngắn)<textarea name="description" rows="2" maxlength="400">${esc(p.description || "")}</textarea></label>
-        <label class="full">Câu chuyện đằng sau sản phẩm<textarea name="story" rows="4" maxlength="2000">${esc(p.story || "")}</textarea></label>
-        <label class="full">Hướng dẫn sử dụng<textarea name="usage" rows="3" maxlength="1000">${esc(p.usage || "")}</textarea></label>
-        <label class="full">Thông tin sản phẩm<textarea name="info" rows="3" maxlength="1000">${esc(p.info || "")}</textarea></label>
+        <label class="full">Câu chuyện đằng sau sản phẩm
+          <textarea name="story" rows="6" maxlength="4000">${esc(p.story || "")}</textarea>
+          <span class="muted">Cách một dòng trống để tách đoạn.</span>
+        </label>
+        <label class="full">Hướng dẫn sử dụng &amp; bảo quản
+          <textarea name="usage" rows="4" maxlength="1500">${esc(p.usage || "")}</textarea>
+          <span class="muted">Mỗi dòng một ý.</span>
+        </label>
+        <label class="full">Thông tin sản phẩm
+          <textarea name="info" rows="8" maxlength="2000">${esc(p.info || "")}</textarea>
+          <span class="muted">Mỗi dòng một thuộc tính dạng "Thuộc tính: Mô tả", vd "Nồng độ: Eau de Parfum (EDP)".</span>
+        </label>
         ${imageField("img", "Ảnh chính (toàn cảnh chai)", p.img)}
         ${imageField("img2", "Ảnh nghệ thuật (hiện khi di chuột)", p.img2)}
         <div class="full">
