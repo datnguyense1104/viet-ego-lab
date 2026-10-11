@@ -43,7 +43,7 @@ const Site = (() => {
             <button class="icon-btn only-mobile nav__close" id="menuClose" aria-label="Đóng menu">${ICON.close}</button>
             ${navLinks}
           </nav>
-          <a href="index.html" class="logo"><img src="images/logo-wordmark.png" alt="Việt Ego Lab" width="436" height="309" /></a>
+          <a href="index.html" class="logo"><img src="images/logo-wordmark.png" alt="Việt Ego Lab" width="404" height="300" /></a>
           <div class="header__actions">
             <button class="icon-btn" id="searchOpen" aria-label="Tìm kiếm">${ICON.search}</button>
             <button class="icon-btn cart-btn" id="cartOpen" aria-label="Giỏ hàng">${ICON.bag}<span class="cart-count" id="cartCount">0</span></button>
@@ -55,8 +55,7 @@ const Site = (() => {
       <footer class="footer">
         <div class="footer__grid">
           <div>
-            <img class="logo--footer" src="images/logo-light.png" alt="Việt Ego Lab – Your Soul, Your Scent" width="436" height="347" loading="lazy" />
-            <p class="footer__tagline">${esc(BRAND.tagline)}</p>
+            <img class="logo--footer" src="images/logo-light.png" alt="Việt Ego Lab – Your Soul, Your Scent" width="600" height="494" loading="lazy" />
           </div>
           <div><h4>Khám phá</h4>${NAV.map((n) => `<a href="${n.href}">${n.label}</a>`).join("")}</div>
           <div>
