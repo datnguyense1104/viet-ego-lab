@@ -39,7 +39,7 @@
   <script src="js/layout.js"></script>
   <script>
     Site.init({ page: "products" }).then(() => {
-      const { $, esc, refLabel } = Site;
+      const { $, esc } = Site;
       const id = new URLSearchParams(location.search).get("id");
       const p = PRODUCTS.find((x) => x.id === id);
       if (!p) {
@@ -70,7 +70,7 @@
             <div class="slider__track" id="sliderTrack">
               ${srcs.map((src, i) => `
                 <div class="slide" role="group" aria-roledescription="slide" aria-label="${i + 1} / ${srcs.length}">
-                  <img src="${esc(src)}" alt="${esc(alt)} – ảnh ${i + 1}" ${i ? 'loading="lazy"' : ""} />${refLabel(src)}
+                  <img src="${esc(src)}" alt="${esc(alt)} – ảnh ${i + 1}" ${i ? 'loading="lazy"' : ""} />
                 </div>`).join("")}
             </div>
             ${srcs.length > 1 ? `<div class="slider__dots">${srcs.map((_, i) => `
@@ -152,7 +152,7 @@
               ? blocks(p.story).map((para) => `<p class="lead">${esc(para)}</p>`).join("")
               : `<p class="lead">Câu chuyện về ${esc(p.region)} và nguồn cảm hứng của ${esc(p.name)} ${tbd.toLowerCase()}.</p>`}
           </div>
-          ${storyImage ? `<div class="frame" style="aspect-ratio:4/5"><img src="${esc(storyImage)}" alt="" loading="lazy" />${refLabel(storyImage)}</div>` : ""}
+          ${storyImage ? `<div class="frame" style="aspect-ratio:4/5"><img src="${esc(storyImage)}" alt="" loading="lazy" /></div>` : ""}
         </div>`;
 
       $("#related").innerHTML = PRODUCTS.filter((x) => x.id !== p.id).slice(0, 4).map(Site.productCard).join("");

@@ -57,7 +57,7 @@
     }
 
     Site.init({ page: "journal" }).then(() => {
-      const { $, esc, refLabel } = Site;
+      const { $, esc } = Site;
       const slug = new URLSearchParams(location.search).get("slug");
       const a = ARTICLES.find((x) => x.slug === slug);
       if (!a) {
@@ -76,7 +76,7 @@
           <h1 class="title">${esc(a.title)}</h1>
           ${a.excerpt ? `<p class="lead" style="margin:0 auto">${esc(a.excerpt)}</p>` : ""}
         </header>
-        ${a.cover ? `<div class="frame article__cover"><img src="${esc(a.cover)}" alt="" />${refLabel(a.cover)}</div>` : ""}
+        ${a.cover ? `<div class="frame article__cover"><img src="${esc(a.cover)}" alt="" /></div>` : ""}
         <div class="article article__body">
           ${published && a.body
             ? renderBody(a.body, esc)

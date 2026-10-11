@@ -21,16 +21,12 @@ const Site = (() => {
     bag: '<svg viewBox="0 0 24 24"><path d="M5 8h14l-1 13H6L5 8z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg>',
   };
 
-  /** Product image: real photo if set, otherwise a neutral placeholder. Stock photos get a caption. */
+  /** Product image: real photo if set, otherwise a neutral placeholder. */
   function media(p, variant = 1) {
     const src = variant === 2 ? p.img2 || p.img : p.img;
     if (src) return `<img src="${esc(src)}" alt="${esc(p.name)}" loading="lazy" />`;
     return `<div class="ph"></div>`;
   }
-  // Brief: reference (stock) images must be identified. Only Unsplash photos get the caption;
-  // the team's own uploads (Supabase Storage or any other host) are shown as-is.
-  const isStock = (src) => /(^|\/\/)images\.unsplash\.com\//.test(String(src || ""));
-  const refLabel = (src) => (isStock(src) ? '<span class="ref-label">Ảnh minh họa</span>' : "");
 
   function renderChrome(page) {
     const navLinks = NAV.map((n) => `<a href="${n.href}"${n.page === page ? ' aria-current="page"' : ""}>${n.label}</a>`).join("");
@@ -302,7 +298,6 @@ const Site = (() => {
         <a class="card__media" href="${productUrl(p)}" aria-label="${esc(p.name)}">
           <div class="card__img1">${media(p, 1)}</div>
           <div class="card__img2">${media(p, 2)}</div>
-          ${refLabel(p.img)}
         </a>
         <h3 class="card__name"><a href="${productUrl(p)}">${esc(p.name)}</a></h3>
         <p class="card__desc">${esc(desc)}</p>
@@ -319,7 +314,6 @@ const Site = (() => {
       <article class="post">
         <a class="post__media" href="${articleUrl(a)}" aria-label="${esc(a.title)}">
           ${a.cover ? `<img src="${esc(a.cover)}" alt="" loading="lazy" />` : '<div class="ph"></div>'}
-          ${refLabel(a.cover)}
           ${soon ? '<span class="post__badge">Sắp ra mắt</span>' : ""}
         </a>
         <p class="eyebrow">${esc(cat?.name || "")}${a.read_minutes ? ` · ${a.read_minutes} phút đọc` : ""}</p>
@@ -350,5 +344,5 @@ const Site = (() => {
     renderCart();
   }
 
-  return { init, $, esc, media, refLabel, productCard, articleCard, productUrl, articleUrl, byId, cart, toast };
+  return { init, $, esc, media, productCard, articleCard, productUrl, articleUrl, byId, cart, toast };
 })();
