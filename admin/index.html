@@ -40,6 +40,7 @@
         <button data-tab="dashboard" class="is-active">Tổng quan</button>
         <button data-tab="orders">Đơn hàng</button>
         <button data-tab="products">Sản phẩm</button>
+        <button data-tab="journal">Tạp chí</button>
         <button data-tab="subscribers">Đăng ký nhận tin</button>
       </nav>
       <div class="side__foot">
@@ -108,6 +109,15 @@
           <button class="btn" id="addProductBtn">+ Thêm sản phẩm</button>
         </div>
         <div id="productsTable"></div>
+      </section>
+
+      <section data-panel="journal" hidden>
+        <div class="panel-head">
+          <h2>Tạp chí mùi hương</h2>
+          <button class="btn" id="addArticleBtn">+ Viết bài mới</button>
+        </div>
+        <p class="muted">"Sắp ra mắt": hiện tiêu đề và ảnh bìa, chưa hiện nội dung. "Đã xuất bản": hiện toàn bộ bài. "Bản nháp": chỉ admin thấy.</p>
+        <div id="articlesTable"></div>
       </section>
 
       <section data-panel="subscribers" hidden>

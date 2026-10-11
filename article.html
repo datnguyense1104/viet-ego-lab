@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tạp chí mùi hương — Việt Ego Lab</title>
+  <link rel="icon" type="image/png" href="images/logo-wordmark.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main>
+    <article id="article"></article>
+    <section class="section section--white" id="relatedSection" hidden>
+      <div class="wrap">
+        <h2 class="title title--sm">Bài viết liên quan</h2>
+        <div class="posts" id="relatedPosts" style="margin-top:32px"></div>
+        <div id="relatedProduct"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    /**
+     * Article body format (written in /admin):
+     *   blank line   → new paragraph       ## Heading   → subheading
+     *   > text       → highlighted quote   ![caption](https://...) → inline image
+     * Everything is escaped; only http(s) image URLs are accepted.
+     */
+    function renderBody(body, esc) {
+      return String(body || "").split(/\n\s*\n/).map((block) => {
+        const b = block.trim();
+        if (!b) return "";
+        if (b.startsWith("## ")) return `<h2>${esc(b.slice(3))}</h2>`;
+        if (b.startsWith("> ")) return `<blockquote>${esc(b.replace(/^> ?/gm, ""))}</blockquote>`;
+        const img = b.match(/^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/);
+        if (img) return `<figure><div class="frame"><img src="${esc(img[2])}" alt="${esc(img[1])}" loading="lazy" /></div>${img[1] ? `<figcaption>${esc(img[1])}</figcaption>` : ""}</figure>`;
+        return `<p>${esc(b).replace(/\n/g, "<br />")}</p>`;
+      }).join("");
+    }
+
+    Site.init({ page: "journal" }).then(() => {
+      const { $, esc, refLabel } = Site;
+      const slug = new URLSearchParams(location.search).get("slug");
+      const a = ARTICLES.find((x) => x.slug === slug);
+      if (!a) {
+        $("#article").innerHTML = `<div class="section empty-state"><h1 class="title title--sm">Không tìm thấy bài viết</h1><a class="btn" href="journal.html">Về Tạp chí mùi hương</a></div>`;
+        return;
+      }
+      document.title = `${a.title} — Việt Ego Lab`;
+      const cat = JOURNAL_CATEGORIES.find((c) => c.id === a.category);
+      const published = a.status === "published";
+      const date = a.published_at ? new Date(a.published_at).toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric" }) : "";
+      const meta = [cat?.name, published && date, published && a.read_minutes && `${a.read_minutes} phút đọc`].filter(Boolean).map(esc).join(" · ");
+
+      $("#article").innerHTML = `
+        <header class="article__head">
+          <p class="eyebrow"><a href="journal.html${cat ? `?cat=${cat.id}` : ""}">${meta}</a></p>
+          <h1 class="title">${esc(a.title)}</h1>
+          ${a.excerpt ? `<p class="lead" style="margin:0 auto">${esc(a.excerpt)}</p>` : ""}
+        </header>
+        ${a.cover ? `<div class="frame article__cover"><img src="${esc(a.cover)}" alt="" />${refLabel}</div>` : ""}
+        <div class="article article__body">
+          ${published && a.body
+            ? renderBody(a.body, esc)
+            : `<div class="soon-box"><p class="eyebrow">Sắp ra mắt</p><p>Bài viết đang được biên soạn. Đăng ký nhận tin để đọc ngay khi bài được xuất bản.</p><a class="btn btn--outline" href="journal.html">Về Tạp chí mùi hương</a></div>`}
+        </div>`;
+
+      // Related articles (same category first) + related product if linked.
+      const related = ARTICLES.filter((x) => x.slug !== a.slug)
+        .sort((x, y) => (y.category === a.category) - (x.category === a.category)).slice(0, 3);
+      const product = a.related_product && PRODUCTS.find((p) => p.id === a.related_product);
+      if (related.length || product) {
+        $("#relatedSection").hidden = false;
+        $("#relatedPosts").innerHTML = related.map(Site.articleCard).join("");
+        if (product) $("#relatedProduct").innerHTML = `
+          <h2 class="title title--sm" style="margin-top:72px">Sản phẩm liên quan</h2>
+          <div class="grid" style="margin-top:32px;max-width:340px">${Site.productCard(product)}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

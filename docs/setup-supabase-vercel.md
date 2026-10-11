@@ -14,8 +14,19 @@
 1. Tạo project tại <https://supabase.com/dashboard> (region gần nhất: Singapore).
 2. Vào **SQL Editor**, chạy lần lượt toàn bộ nội dung:
    - `supabase/schema.sql` (bảng, phân quyền, hàm tạo đơn, bucket ảnh)
-   - `supabase/seed.sql` (12 sản phẩm ban đầu)
    - `supabase/analytics.sql` (thống kê truy cập cho biểu đồ ở `/admin`; ghi lượt xem ẩn danh qua `/api/track`, không lưu IP)
+   - `supabase/brief-alignment.sql` (5 sản phẩm theo brief, các trường trang chi tiết sản phẩm, bảng `articles` cho Tạp chí mùi hương)
+
+## Trang web (theo brief)
+
+| Trang | File | Nội dung |
+|---|---|---|
+| Trang chủ | `index.html` | 7 phần: Hero → Tuyên ngôn |
+| Về Việt Ego Lab | `about.html` | Câu chuyện, nguồn cảm hứng, ý nghĩa tên, triết lý, tuyên ngôn |
+| Danh mục sản phẩm | `products.html`, `product.html?id=` | Bộ lọc (bộ sưu tập / nhóm hương chỉ hiện khi có dữ liệu), trang chi tiết |
+| Tạp chí mùi hương | `journal.html`, `article.html?slug=` | 4 chuyên mục, bài viết quản lý ở `/admin` → Tạp chí |
+
+Quy tắc nội dung (brief VI): không tự điền giá, nốt hương, thành phần khi chưa được xác nhận. Ô để trống trong admin hiển thị "Đang cập nhật"; sản phẩm chưa có giá không đặt mua được. Ảnh stock được gắn nhãn "Ảnh minh họa".
    Hai file chạy lại nhiều lần vẫn an toàn.
 
 ## 2. Tạo tài khoản admin

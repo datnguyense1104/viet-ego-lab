@@ -4,7 +4,7 @@
 (() => {
   const $ = (sel, root = document) => root.querySelector(sel);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const money = (n) => Number(n || 0).toLocaleString("vi-VN") + "₫";
+  const money = (n) => (n == null ? "—" : Number(n).toLocaleString("vi-VN") + "₫");
   const dateTime = (s) => new Date(s).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
 
   const STATUS = {
@@ -14,8 +14,6 @@
     done: "Hoàn thành",
     cancelled: "Đã huỷ",
   };
-  const CATS = { edp: "Eau de Parfum", edt: "Eau de Toilette", set: "Bộ khám phá", home: "Hương thơm không gian" };
-  const MOODS = { "": "(không)", "diu-dang": "Dịu dàng", "trong-treo": "Trong trẻo", "am-ap": "Ấm áp", "manh-me": "Mạnh mẽ", "tinh-lang": "Tĩnh lặng" };
   const BUCKET = "product-images";
 
   const { url, anonKey } = SUPABASE_CONFIG;
@@ -98,7 +96,7 @@
   });
 
   /* ---------- Tabs ---------- */
-  const loaders = { dashboard: loadDashboard, orders: loadOrders, products: loadProducts, subscribers: loadSubscribers };
+  const loaders = { dashboard: loadDashboard, orders: loadOrders, products: loadProducts, journal: loadArticles, subscribers: loadSubscribers };
   function switchTab(tab) {
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === tab));
     document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== tab));
@@ -292,24 +290,90 @@
       <p style="text-align:right;font-size:16px;margin-top:16px">Tổng cộng: <strong>${money(o.total)}</strong></p>`);
   }
 
+  /* ---------- Shared form helpers: image fields with Storage upload ---------- */
+  function imageField(name, label, value) {
+    return `
+      <div class="full img-field">
+        <img src="${esc(value || "")}" alt="" data-preview="${name}" ${value ? "" : "hidden"} />
+        <div>
+          <label>${label}<input name="${name}" value="${esc(value || "")}" placeholder="Dán link ảnh hoặc tải ảnh lên" /></label>
+          <input type="file" accept="image/*" data-upload="${name}" aria-label="Tải ${label.toLowerCase()} lên" />
+        </div>
+      </div>`;
+  }
+
+  // Upload to Supabase Storage, then drop the public URL into the matching field.
+  // `folder()` names the Storage folder (product id / article slug) at upload time.
+  function bindImageUploads(form, folder) {
+    form.addEventListener("change", async (e) => {
+      const input = e.target.closest("[data-upload]");
+      if (!input?.files[0]) return;
+      const file = input.files[0];
+      if (file.size > 5 * 1024 * 1024) return toast("Ảnh tối đa 5MB.");
+      const field = form.elements.namedItem(input.dataset.upload);
+      const path = `${folder() || "misc"}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+      try {
+        toast("Đang tải ảnh lên...");
+        must(await db.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type }));
+        const publicUrl = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+        // Gallery is a one-URL-per-line textarea: append instead of replacing.
+        field.value = field.tagName === "TEXTAREA" ? [field.value.trim(), publicUrl].filter(Boolean).join("\n") : publicUrl;
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        toast("Tải ảnh thành công.");
+      } catch (err) {
+        toast("Không tải được ảnh: " + err.message);
+      } finally {
+        input.value = "";
+      }
+    });
+    form.addEventListener("input", (e) => {
+      const img = form.querySelector(`[data-preview="${e.target.name}"]`);
+      if (img) { img.src = e.target.value; img.hidden = !e.target.value; }
+    });
+  }
+
+  /** Shared submit flow: validate, build row, insert/update, report duplicate keys clearly. */
+  function bindSave(form, { table: tbl, isNew, key, keyValue, buildRow, duplicateMsg, onSaved }) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+      const btn = form.querySelector("[type=submit]");
+      btn.disabled = true;
+      try {
+        const row = buildRow(Object.fromEntries(new FormData(form)));
+        if (isNew) must(await db.from(tbl).insert(row));
+        else must(await db.from(tbl).update(row).eq(key, keyValue));
+        closeModal();
+        toast(isNew ? "Đã tạo mới." : "Đã lưu thay đổi.");
+        onSaved();
+      } catch (err) {
+        form.querySelector(".error").textContent = err.code === "23505" ? duplicateMsg : err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
   /* ---------- Products ---------- */
   let products = [];
+  const priceText = (n) => (n == null ? "Chưa có giá" : money(n));
+
   async function loadProducts() {
     products = must(await db.from("products").select("*").order("sort_order").order("created_at"));
     const rows = products.map((p) => `
       <tr>
         <td>${p.img ? `<img class="thumb" src="${esc(p.img)}" alt="" loading="lazy" />` : `<div class="thumb"></div>`}</td>
         <td class="wrap"><strong>${esc(p.name)}</strong><br /><span class="muted">${esc(p.id)}</span></td>
-        <td>${esc(CATS[p.cat] || p.cat)}</td>
-        <td>${money(p.price)}</td>
-        <td>${esc(p.size)}</td>
-        <td><label class="check"><input type="checkbox" data-active="${esc(p.id)}"${p.is_active ? " checked" : ""} /> Đang bán</label></td>
+        <td>${esc(p.collection) || "—"}</td>
+        <td>${priceText(p.price)}</td>
+        <td>${esc(p.size) || "—"}</td>
+        <td><label class="check"><input type="checkbox" data-active="${esc(p.id)}"${p.is_active ? " checked" : ""} /> Hiển thị</label></td>
         <td class="row-actions">
           <button class="link" data-edit="${esc(p.id)}">Sửa</button>
           <button class="link" data-delete="${esc(p.id)}">Xoá</button>
         </td>
       </tr>`);
-    $("#productsTable").innerHTML = table(["Ảnh", "Tên", "Danh mục", "Giá", "Dung tích", "Hiển thị", ""], rows, "Chưa có sản phẩm.");
+    $("#productsTable").innerHTML = table(["Ảnh", "Tên", "Bộ sưu tập", "Giá", "Dung tích", "Cửa hàng", ""], rows, "Chưa có sản phẩm.");
   }
 
   $("#productsTable").addEventListener("change", async (e) => {
@@ -341,37 +405,36 @@
   });
   $("#addProductBtn").addEventListener("click", () => openProductForm(null));
 
-  function imageField(name, label, value) {
-    return `
-      <div class="full img-field">
-        <img src="${esc(value || "")}" alt="" data-preview="${name}" ${value ? "" : "hidden"} />
-        <div>
-          <label>${label}<input name="${name}" value="${esc(value || "")}" placeholder="Dán link ảnh hoặc tải ảnh lên" /></label>
-          <input type="file" accept="image/*" data-upload="${name}" aria-label="Tải ${label.toLowerCase()} lên" />
-        </div>
-      </div>`;
-  }
-
+  // Fields follow the brief's product page. Leave anything unconfirmed empty:
+  // the storefront shows "Đang cập nhật", and products without a price cannot be ordered.
   function openProductForm(p) {
     const isNew = !p;
-    p = p || { cat: "edp", price: 0, hue: 90, is_active: true, sort_order: products.length };
+    p = p || { price: null, is_active: true, sort_order: products.length, gallery: [] };
     openModal(`
       <h2>${isNew ? "Thêm sản phẩm" : "Sửa sản phẩm"}</h2>
+      <p class="muted">Chỉ điền thông tin đã được thương hiệu xác nhận. Ô để trống sẽ hiển thị "Đang cập nhật".</p>
       <form id="productForm" class="form-grid">
-        <label>Mã sản phẩm *<input name="id" required pattern="[a-z0-9-]+" maxlength="60" value="${esc(p.id || "")}" ${isNew ? "" : "readonly"} placeholder="vd: edp-com" /></label>
-        <label>Tên *<input name="name" required maxlength="100" value="${esc(p.name || "")}" /></label>
-        <label>Danh mục<select name="cat">${options(CATS, p.cat)}</select></label>
-        <label>Vùng đất<input name="region" maxlength="100" value="${esc(p.region || "")}" /></label>
-        <label>Giá (₫) *<input name="price" type="number" min="0" step="1000" required value="${esc(p.price)}" /></label>
-        <label>Dung tích<input name="size" maxlength="40" value="${esc(p.size || "")}" placeholder="vd: 50ml" /></label>
-        <label>Cảm xúc (Tìm hương)<select name="mood">${options(MOODS, p.mood || "")}</select></label>
+        <label>Mã sản phẩm (đường dẫn) *<input name="id" required pattern="[a-z0-9-]+" maxlength="60" value="${esc(p.id || "")}" ${isNew ? "" : "readonly"} placeholder="vd: com-xanh-ha-noi" /></label>
+        <label>Tên sản phẩm *<input name="name" required maxlength="100" value="${esc(p.name || "")}" /></label>
+        <label>Giá bán (₫)<input name="price" type="number" min="0" step="1000" value="${p.price ?? ""}" placeholder="Để trống nếu chưa có giá" /></label>
+        <label>Dung tích<input name="size" maxlength="40" value="${esc(p.size || "")}" placeholder="vd: 100ml" /></label>
+        <label>Vùng đất cảm hứng<input name="region" maxlength="100" value="${esc(p.region || "")}" /></label>
+        <label>Bộ sưu tập<input name="collection" maxlength="80" value="${esc(p.collection || "")}" /></label>
+        <label>Nhóm hương<input name="scent_family" maxlength="80" value="${esc(p.scent_family || "")}" /></label>
         <label>Thứ tự hiển thị<input name="sort_order" type="number" value="${esc(p.sort_order)}" /></label>
-        <label class="full">Tầng hương<input name="notes" maxlength="200" value="${esc(p.notes || "")}" placeholder="vd: Cốm non · Lá sen · Xạ hương" /></label>
-        <label class="full">Câu chuyện<textarea name="story" rows="3" maxlength="600">${esc(p.story || "")}</textarea></label>
-        ${imageField("img", "Ảnh chính", p.img)}
-        ${imageField("img2", "Ảnh khi di chuột", p.img2)}
+        <label class="full">Các nốt hương đã xác nhận<input name="notes" maxlength="200" value="${esc(p.notes || "")}" /></label>
+        <label class="full">Mô tả cảm hứng mùi hương (ngắn)<textarea name="description" rows="2" maxlength="400">${esc(p.description || "")}</textarea></label>
+        <label class="full">Câu chuyện đằng sau sản phẩm<textarea name="story" rows="4" maxlength="2000">${esc(p.story || "")}</textarea></label>
+        <label class="full">Hướng dẫn sử dụng<textarea name="usage" rows="3" maxlength="1000">${esc(p.usage || "")}</textarea></label>
+        <label class="full">Thông tin sản phẩm<textarea name="info" rows="3" maxlength="1000">${esc(p.info || "")}</textarea></label>
+        ${imageField("img", "Ảnh chính (toàn cảnh chai)", p.img)}
+        ${imageField("img2", "Ảnh nghệ thuật (hiện khi di chuột)", p.img2)}
+        <div class="full">
+          <label>Ảnh thêm: cận cảnh, bao bì... (mỗi dòng một link)<textarea name="gallery" rows="3">${esc((p.gallery || []).join("\n"))}</textarea></label>
+          <input type="file" accept="image/*" data-upload="gallery" aria-label="Tải ảnh thêm lên" />
+        </div>
         <label class="check full"><input type="checkbox" name="is_active" ${p.is_active ? "checked" : ""} /> Hiển thị trên cửa hàng</label>
-        <p class="error full" id="productError"></p>
+        <p class="error full"></p>
         <div class="form-actions full">
           <button type="button" class="btn btn--ghost" data-close>Huỷ</button>
           <button type="submit" class="btn">${isNew ? "Tạo sản phẩm" : "Lưu thay đổi"}</button>
@@ -379,63 +442,138 @@
       </form>`);
 
     const form = $("#productForm");
-    // Upload to Supabase Storage, then drop the public URL into the matching text field.
-    form.addEventListener("change", async (e) => {
-      const input = e.target.closest("[data-upload]");
-      if (!input?.files[0]) return;
-      const file = input.files[0];
-      if (file.size > 5 * 1024 * 1024) return toast("Ảnh tối đa 5MB.");
-      const field = input.dataset.upload;
-      // form.elements.id, not form.id (that is the <form>'s own id attribute).
-      const path = `${form.elements.namedItem("id").value || "product"}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-      try {
-        toast("Đang tải ảnh lên...");
-        must(await db.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type }));
-        const publicUrl = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-        form[field].value = publicUrl;
-        form[field].dispatchEvent(new Event("input", { bubbles: true }));
-        toast("Tải ảnh thành công.");
-      } catch (err) {
-        toast("Không tải được ảnh: " + err.message);
-      }
-    });
-    form.addEventListener("input", (e) => {
-      const img = form.querySelector(`[data-preview="${e.target.name}"]`);
-      if (img) { img.src = e.target.value; img.hidden = !e.target.value; }
-    });
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!form.reportValidity()) return;
-      const f = Object.fromEntries(new FormData(form));
-      const row = {
+    bindImageUploads(form, () => form.elements.namedItem("id").value);
+    bindSave(form, {
+      table: "products", isNew, key: "id", keyValue: p.id,
+      duplicateMsg: "Mã sản phẩm đã tồn tại.",
+      onSaved: loadProducts,
+      buildRow: (f) => ({
         id: f.id.trim(),
         name: f.name.trim(),
-        cat: f.cat,
-        region: f.region.trim(),
-        mood: f.mood,
-        notes: f.notes.trim(),
-        story: f.story.trim(),
-        price: Math.round(Number(f.price)),
+        price: f.price === "" ? null : Math.round(Number(f.price)),
         size: f.size.trim(),
-        sort_order: Number(f.sort_order) || 0,
+        region: f.region.trim(),
+        collection: f.collection.trim(),
+        scent_family: f.scent_family.trim(),
+        notes: f.notes.trim(),
+        description: f.description.trim(),
+        story: f.story.trim(),
+        usage: f.usage.trim(),
+        info: f.info.trim(),
         img: f.img.trim() || null,
         img2: f.img2.trim() || null,
-        is_active: form.is_active.checked,
-      };
-      const btn = form.querySelector("[type=submit]");
-      btn.disabled = true;
-      try {
-        if (isNew) must(await db.from("products").insert(row));
-        else must(await db.from("products").update(row).eq("id", row.id));
-        closeModal();
-        toast(isNew ? "Đã tạo sản phẩm." : "Đã lưu thay đổi.");
-        loadProducts();
-      } catch (err) {
-        $("#productError").textContent = err.code === "23505" ? "Mã sản phẩm đã tồn tại." : err.message;
-      } finally {
-        btn.disabled = false;
-      }
+        gallery: f.gallery.split("\n").map((s) => s.trim()).filter((s) => /^https?:\/\//.test(s)),
+        sort_order: Number(f.sort_order) || 0,
+        is_active: form.elements.namedItem("is_active").checked,
+      }),
+    });
+  }
+
+  /* ---------- Journal (articles) ---------- */
+  const ARTICLE_CATS = {
+    "nghe-thuat-mui-huong": "Nghệ thuật mùi hương",
+    "huong-viet-va-ky-uc": "Hương Việt và ký ức",
+    "mui-huong-va-ban-sac": "Mùi hương và bản sắc",
+    "nhat-ky-sang-tao": "Nhật ký sáng tạo",
+  };
+  const ARTICLE_STATUS = { draft: "Bản nháp (ẩn)", coming_soon: "Sắp ra mắt", published: "Đã xuất bản" };
+  const STATUS_BADGE = { draft: "cancelled", coming_soon: "new", published: "done" };
+  let articles = [];
+
+  async function loadArticles() {
+    articles = must(await db.from("articles").select("*").order("sort_order").order("created_at"));
+    if (!products.length) products = must(await db.from("products").select("id, name").order("sort_order"));
+    const rows = articles.map((a) => `
+      <tr>
+        <td>${a.cover ? `<img class="thumb" src="${esc(a.cover)}" alt="" loading="lazy" />` : `<div class="thumb"></div>`}</td>
+        <td class="wrap"><strong>${esc(a.title)}</strong><br /><span class="muted">${esc(a.slug)}</span></td>
+        <td>${esc(ARTICLE_CATS[a.category] || a.category)}</td>
+        <td><span class="badge badge--${STATUS_BADGE[a.status]}">${esc(ARTICLE_STATUS[a.status])}</span></td>
+        <td>${a.published_at ? dateTime(a.published_at) : "—"}</td>
+        <td class="row-actions">
+          <a class="link" href="../article.html?slug=${encodeURIComponent(a.slug)}" target="_blank" rel="noopener">Xem</a>
+          <button class="link" data-edit-article="${a.id}">Sửa</button>
+          <button class="link" data-delete-article="${a.id}">Xoá</button>
+        </td>
+      </tr>`);
+    $("#articlesTable").innerHTML = table(["Ảnh bìa", "Tiêu đề", "Chuyên mục", "Trạng thái", "Ngày đăng", ""], rows, "Chưa có bài viết.");
+  }
+
+  $("#articlesTable").addEventListener("click", async (e) => {
+    const edit = e.target.closest("[data-edit-article]");
+    if (edit) return openArticleForm(articles.find((a) => String(a.id) === edit.dataset.editArticle));
+    const del = e.target.closest("[data-delete-article]");
+    if (!del) return;
+    const a = articles.find((x) => String(x.id) === del.dataset.deleteArticle);
+    if (!confirm(`Xoá bài "${a.title}"?`)) return;
+    try {
+      must(await db.from("articles").delete().eq("id", a.id));
+      toast("Đã xoá bài viết.");
+      loadArticles();
+    } catch (err) {
+      toast("Không xoá được: " + err.message);
+    }
+  });
+  $("#addArticleBtn").addEventListener("click", () => openArticleForm(null));
+
+  function openArticleForm(a) {
+    const isNew = !a;
+    a = a || { category: "huong-viet-va-ky-uc", status: "draft", sort_order: articles.length };
+    const productOptions = { "": "(không)", ...Object.fromEntries(products.map((p) => [p.id, p.name])) };
+    openModal(`
+      <h2>${isNew ? "Viết bài mới" : "Sửa bài viết"}</h2>
+      <form id="articleForm" class="form-grid">
+        <label class="full">Tiêu đề *<input name="title" required maxlength="160" value="${esc(a.title || "")}" /></label>
+        <label>Đường dẫn *<input name="slug" required pattern="[a-z0-9-]+" maxlength="80" value="${esc(a.slug || "")}" placeholder="vd: neu-viet-nam-co-mot-mui-huong" /></label>
+        <label>Chuyên mục<select name="category">${options(ARTICLE_CATS, a.category)}</select></label>
+        <label>Trạng thái<select name="status">${options(ARTICLE_STATUS, a.status)}</select></label>
+        <label>Thời gian đọc (phút)<input name="read_minutes" type="number" min="1" max="120" value="${a.read_minutes ?? ""}" /></label>
+        <label>Sản phẩm liên quan<select name="related_product">${options(productOptions, a.related_product || "")}</select></label>
+        <label>Thứ tự hiển thị<input name="sort_order" type="number" value="${esc(a.sort_order)}" /></label>
+        <label class="full">Mô tả ngắn<textarea name="excerpt" rows="2" maxlength="400">${esc(a.excerpt || "")}</textarea></label>
+        ${imageField("cover", "Ảnh bìa (ảnh ngang)", a.cover)}
+        <label class="full">Nội dung bài viết
+          <textarea name="body" rows="14">${esc(a.body || "")}</textarea>
+          <span class="muted">Cách một dòng trống để tách đoạn · <code>## </code> tiêu đề phụ · <code>&gt; </code> trích dẫn nổi bật · <code>![chú thích](link ảnh)</code> chèn ảnh</span>
+        </label>
+        <div class="full">
+          <input type="hidden" name="bodyImage" />
+          <input type="file" accept="image/*" data-upload="bodyImage" aria-label="Tải ảnh minh họa cho nội dung" />
+          <span class="muted">Tải ảnh minh họa: ảnh sẽ được chèn vào cuối nội dung.</span>
+        </div>
+        <p class="error full"></p>
+        <div class="form-actions full">
+          <button type="button" class="btn btn--ghost" data-close>Huỷ</button>
+          <button type="submit" class="btn">${isNew ? "Tạo bài viết" : "Lưu thay đổi"}</button>
+        </div>
+      </form>`);
+
+    const form = $("#articleForm");
+    bindImageUploads(form, () => "journal/" + (form.elements.namedItem("slug").value || "draft"));
+    // An uploaded body image lands in the hidden field; append it to the body as an image block.
+    form.elements.namedItem("bodyImage").addEventListener("input", (e) => {
+      const body = form.elements.namedItem("body");
+      body.value = `${body.value.trim()}\n\n![](${e.target.value})\n`;
+      e.target.value = "";
+    });
+    bindSave(form, {
+      table: "articles", isNew, key: "id", keyValue: a.id,
+      duplicateMsg: "Đường dẫn đã được dùng cho bài khác.",
+      onSaved: loadArticles,
+      buildRow: (f) => ({
+        title: f.title.trim(),
+        slug: f.slug.trim(),
+        category: f.category,
+        status: f.status,
+        read_minutes: f.read_minutes ? Number(f.read_minutes) : null,
+        related_product: f.related_product || null,
+        sort_order: Number(f.sort_order) || 0,
+        excerpt: f.excerpt.trim(),
+        cover: f.cover.trim() || null,
+        body: f.body.trim(),
+        // First publish stamps the date; later edits keep it.
+        published_at: f.status === "published" ? a.published_at || new Date().toISOString() : a.published_at || null,
+      }),
     });
   }
 

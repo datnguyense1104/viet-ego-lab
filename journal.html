@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tạp chí mùi hương — Việt Ego Lab</title>
+  <meta name="description" content="Những câu chuyện về mùi hương, văn hóa Việt, ký ức và bản sắc cá nhân." />
+  <link rel="icon" type="image/png" href="images/logo-wordmark.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main>
+    <!-- 4.1 Journal hero -->
+    <section class="page-hero">
+      <div class="hero__bg">
+        <img src="https://images.unsplash.com/photo-1764141738717-896b3365c196?w=1920&q=75&auto=format&fit=crop" alt="" />
+        <span class="ref-label">Ảnh minh họa</span>
+      </div>
+      <div class="page-hero__content">
+        <p class="eyebrow">Tạp chí mùi hương</p>
+        <h1 class="title">Những câu chuyện được gợi mở từ mùi hương.</h1>
+        <p class="lead">Mùi hương có thể đưa ta trở về một ký ức, gợi nhắc một vùng đất hoặc giúp ta khám phá một phần của chính mình.</p>
+        <p class="lead">Tạp chí mùi hương của Việt Ego Lab là nơi những câu chuyện về văn hóa, cảm xúc và bản sắc được tiếp tục kể bằng một góc nhìn mới.</p>
+      </div>
+    </section>
+
+    <!-- 4.2 Categories (act as filters) -->
+    <section class="section section--tight" style="padding-top:64px">
+      <div class="wrap">
+        <p class="eyebrow">Chuyên mục</p>
+        <div class="cats" id="cats" role="group" aria-label="Lọc theo chuyên mục"></div>
+      </div>
+    </section>
+
+    <!-- 4.3 Featured articles -->
+    <section class="section">
+      <div class="wrap">
+        <h2 class="title title--sm" id="listTitle">Những điều đáng để cảm nhận.</h2>
+        <div class="posts" id="posts" style="margin-top:32px"></div>
+      </div>
+    </section>
+
+    <!-- 4.5 Newsletter -->
+    <section class="section section--white newsletter">
+      <div class="wrap">
+        <p class="eyebrow">Đăng ký nhận tin</p>
+        <h2 class="title">Để những câu chuyện mùi hương tiếp tục.</h2>
+        <p class="lead" style="margin:0 auto">Đăng ký để khám phá những câu chuyện mới về mùi hương, văn hóa Việt và bản sắc cá nhân từ Việt Ego Lab.</p>
+        <form class="newsletter__form" data-newsletter>
+          <div class="newsletter__row">
+            <input type="email" name="email" required placeholder="Email của bạn" aria-label="Email" />
+            <button class="btn" type="submit">Đăng ký</button>
+          </div>
+          <label class="consent">
+            <input type="checkbox" name="consent" required />
+            <span>Tôi đồng ý nhận email từ Việt Ego Lab. Email chỉ dùng để gửi tin từ Tạp chí mùi hương, không chia sẻ cho bên thứ ba; bạn có thể yêu cầu huỷ đăng ký bất cứ lúc nào.</span>
+          </label>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    Site.init({ page: "journal" }).then(() => {
+      const { $, esc } = Site;
+      let active = new URLSearchParams(location.search).get("cat") || "";
+      function render() {
+        $("#cats").innerHTML = JOURNAL_CATEGORIES.map((c, i) => `
+          <button class="cat" data-cat="${c.id}" aria-pressed="${c.id === active}">
+            <span class="cat__num">0${i + 1}</span>
+            <span class="cat__name" style="display:block">${esc(c.name)}</span>
+            <p class="cat__desc">${esc(c.desc)}</p>
+          </button>`).join("");
+        const list = ARTICLES.filter((a) => !active || a.category === active);
+        const cat = JOURNAL_CATEGORIES.find((c) => c.id === active);
+        $("#listTitle").textContent = cat ? cat.name : "Những điều đáng để cảm nhận.";
+        $("#posts").innerHTML = list.length
+          ? list.map(Site.articleCard).join("")
+          : `<p class="empty-state" style="grid-column:1/-1">Chuyên mục này chưa có bài viết.</p>`;
+      }
+      $("#cats").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-cat]");
+        if (!b) return;
+        active = active === b.dataset.cat ? "" : b.dataset.cat;
+        history.replaceState(null, "", active ? `?cat=${active}` : location.pathname);
+        render();
+      });
+      render();
+    });
+  </script>
+</body>
+</html>

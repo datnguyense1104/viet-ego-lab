@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh mục sản phẩm — Việt Ego Lab</title>
+  <meta name="description" content="Khám phá thế giới mùi hương của Việt Ego Lab." />
+  <link rel="icon" type="image/png" href="images/logo-wordmark.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main>
+    <!-- 3.1 Product hero -->
+    <section class="page-hero">
+      <div class="hero__bg">
+        <img src="https://images.unsplash.com/photo-1635796332668-78830169097d?w=1920&q=75&auto=format&fit=crop" alt="" />
+        <span class="ref-label">Ảnh minh họa</span>
+      </div>
+      <div class="page-hero__content">
+        <p class="eyebrow">Danh mục sản phẩm</p>
+        <h1 class="title">Khám phá thế giới mùi hương của Việt Ego Lab.</h1>
+        <p class="lead">Mỗi mùi hương mở ra một thế giới cảm xúc khác nhau. Khám phá những sáng tạo của Việt Ego Lab và tìm thấy mùi hương đồng điệu với bạn.</p>
+      </div>
+    </section>
+
+    <!-- 3.2 Product listing -->
+    <section class="section">
+      <div class="wrap">
+        <form class="filters" id="filters" aria-label="Bộ lọc sản phẩm"></form>
+        <div class="grid" id="productGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    // Filters from the brief. Collection / scent family only appear once the team fills them in.
+    const PRICE_BANDS = [
+      { id: "lt500", label: "Dưới 500.000₫", test: (p) => p.price != null && p.price < 500000 },
+      { id: "500-1000", label: "500.000₫ – 1.000.000₫", test: (p) => p.price != null && p.price >= 500000 && p.price <= 1000000 },
+      { id: "gt1000", label: "Trên 1.000.000₫", test: (p) => p.price != null && p.price > 1000000 },
+      { id: "tbd", label: "Giá đang cập nhật", test: (p) => p.price == null },
+    ];
+
+    Site.init({ page: "products" }).then(() => {
+      const { $, esc } = Site;
+      const distinct = (key) => [...new Set(PRODUCTS.map((p) => p[key]).filter(Boolean))].sort();
+      const select = (name, label, options) =>
+        `<label>${label}<select name="${name}"><option value="">Tất cả</option>${options
+          .map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select></label>`;
+
+      const collections = distinct("collection"), families = distinct("scent_family"), sizes = distinct("size");
+      const bands = PRICE_BANDS.filter((b) => PRODUCTS.some(b.test));
+      $("#filters").innerHTML = [
+        collections.length ? select("collection", "Bộ sưu tập", collections.map((c) => [c, c])) : "",
+        families.length ? select("scent_family", "Nhóm hương", families.map((f) => [f, f])) : "",
+        bands.length ? select("price", "Khoảng giá", bands.map((b) => [b.id, b.label])) : "",
+        sizes.length ? select("size", "Dung tích", sizes.map((s) => [s, s]).concat(PRODUCTS.some((p) => !p.size) ? [["__none", "Đang cập nhật"]] : [])) : "",
+        `<button type="reset" class="link-arrow">Xoá bộ lọc</button>`,
+        `<span class="filters__count" id="count" aria-live="polite"></span>`,
+      ].join("");
+
+      // Preselect from URL (?collection=...) so filtered views can be linked.
+      const params = new URLSearchParams(location.search);
+      $("#filters").querySelectorAll("select").forEach((s) => { if (params.get(s.name)) s.value = params.get(s.name); });
+
+      function render() {
+        const f = Object.fromEntries(new FormData($("#filters")));
+        const band = PRICE_BANDS.find((b) => b.id === f.price);
+        const list = PRODUCTS.filter((p) =>
+          (!f.collection || p.collection === f.collection) &&
+          (!f.scent_family || p.scent_family === f.scent_family) &&
+          (!band || band.test(p)) &&
+          (!f.size || (f.size === "__none" ? !p.size : p.size === f.size)));
+        $("#productGrid").innerHTML = list.length
+          ? list.map(Site.productCard).join("")
+          : `<p class="empty-state" style="grid-column:1/-1">Không có sản phẩm phù hợp với bộ lọc.</p>`;
+        $("#count").textContent = `${list.length} sản phẩm`;
+      }
+      $("#filters").addEventListener("change", render);
+      $("#filters").addEventListener("reset", () => setTimeout(render));
+      render();
+    });
+  </script>
+</body>
+</html>

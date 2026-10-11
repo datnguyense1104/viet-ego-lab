@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sản phẩm — Việt Ego Lab</title>
+  <link rel="icon" type="image/png" href="images/logo-wordmark.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Be+Vietnam+Pro:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main>
+    <section class="section"><div class="wrap" id="detail"></div></section>
+    <section class="section section--white" id="storySection" hidden><div class="wrap" id="story"></div></section>
+    <section class="section">
+      <div class="wrap">
+        <h2 class="title title--sm">Mùi hương khác</h2>
+        <div class="grid" id="related" style="margin-top:32px"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    Site.init({ page: "products" }).then(() => {
+      const { $, esc, refLabel } = Site;
+      const id = new URLSearchParams(location.search).get("id");
+      const p = PRODUCTS.find((x) => x.id === id);
+      if (!p) {
+        $("#detail").innerHTML = `<div class="empty-state"><h1 class="title title--sm">Không tìm thấy sản phẩm</h1><a class="btn" href="products.html">Xem tất cả sản phẩm</a></div>`;
+        $("#related").closest("section").hidden = true;
+        return;
+      }
+      document.title = `${p.name} — Việt Ego Lab`;
+      const tbd = '<span class="tbd">Đang cập nhật</span>';
+      const text = (v) => (v ? esc(v) : tbd);
+      const frame = (src, alt) => `<div class="frame"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" />${refLabel}</div>`;
+      // Gallery = main bottle shot + extra shots (close-up, packaging); the art shot (img2) belongs to the story.
+      const images = [p.img, ...(p.gallery || [])].filter(Boolean);
+      const storyImage = p.img2 || (p.gallery || [])[0];
+      const buyable = isPurchasable(p);
+
+      // 3.3 Product detail: images on one side, info on the other.
+      $("#detail").innerHTML = `
+        <div class="pd">
+          <div class="pd__gallery">${images.length ? images.slice(0, 5).map((src) => frame(src, p.name)).join("") : '<div class="frame"><div class="ph"></div></div>'}</div>
+          <div class="pd__info">
+            <p class="eyebrow"><a href="products.html">Danh mục sản phẩm</a>${p.collection ? " · " + esc(p.collection) : ""}</p>
+            <h1 class="pd__name">${esc(p.name)}</h1>
+            <p class="pd__price">${formatPrice(p.price)}${p.size ? ` <span>· ${esc(p.size)}</span>` : ""}</p>
+            <p class="lead">${p.description ? esc(p.description) : `Cảm hứng từ ${esc(p.region)}. ${tbd}`}</p>
+            ${buyable ? `
+              <div class="pd__buy">
+                <div class="qty"><button data-q="-1" aria-label="Giảm">−</button><span id="qty">1</span><button data-q="1" aria-label="Tăng">+</button></div>
+                <button class="btn" id="addBtn">Thêm vào giỏ hàng</button>
+              </div>` : `<p class="pd__notice">Sản phẩm chưa mở bán trực tuyến. Thông tin giá và dung tích sẽ được cập nhật sớm.</p>`}
+            <div class="spec">
+              <details open><summary>Nhóm hương &amp; nốt hương</summary><div class="spec__body">${p.scent_family || p.notes ? [p.scent_family, p.notes].filter(Boolean).map(esc).join("\n") : tbd}</div></details>
+              <details><summary>Hướng dẫn sử dụng</summary><div class="spec__body">${text(p.usage)}</div></details>
+              <details><summary>Thông tin sản phẩm</summary><div class="spec__body">${p.info ? esc(p.info) : p.size ? "Dung tích: " + esc(p.size) : tbd}</div></details>
+            </div>
+          </div>
+        </div>`;
+
+      if (buyable) {
+        let qty = 1;
+        $("#detail").addEventListener("click", (e) => {
+          const b = e.target.closest("[data-q]");
+          if (b) { qty = Math.min(20, Math.max(1, qty + Number(b.dataset.q))); $("#qty").textContent = qty; }
+          if (e.target.closest("#addBtn")) { Site.cart.add(p.id, qty); Site.openCart(); }
+        });
+      }
+
+      // 3.4 Product story.
+      $("#storySection").hidden = false;
+      $("#story").innerHTML = `
+        <div class="split">
+          <div>
+            <p class="eyebrow">Câu chuyện đằng sau mùi hương</p>
+            <h2 class="title">Một mùi hương, một nguồn cảm hứng.</h2>
+            <p class="lead">${p.story ? esc(p.story) : `Câu chuyện về ${esc(p.region)} và nguồn cảm hứng của ${esc(p.name)} ${tbd.toLowerCase()}.`}</p>
+          </div>
+          ${storyImage ? `<div class="frame" style="aspect-ratio:4/5"><img src="${esc(storyImage)}" alt="" loading="lazy" />${refLabel}</div>` : ""}
+        </div>`;
+
+      $("#related").innerHTML = PRODUCTS.filter((x) => x.id !== p.id).slice(0, 4).map(Site.productCard).join("");
+    });
+  </script>
+</body>
+</html>
