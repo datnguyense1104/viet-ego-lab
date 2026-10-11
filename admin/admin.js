@@ -368,10 +368,10 @@
         <td>${priceText(p.price)}</td>
         <td>${esc(p.size) || "—"}</td>
         <td><label class="check"><input type="checkbox" data-active="${esc(p.id)}"${p.is_active ? " checked" : ""} /> Hiển thị</label></td>
-        <td class="row-actions">
+        <td><div class="row-actions">
           <button class="link" data-edit="${esc(p.id)}">Sửa</button>
           <button class="link" data-delete="${esc(p.id)}">Xoá</button>
-        </td>
+        </div></td>
       </tr>`);
     $("#productsTable").innerHTML = table(["Ảnh", "Tên", "Bộ sưu tập", "Giá", "Dung tích", "Cửa hàng", ""], rows, "Chưa có sản phẩm.");
   }
@@ -502,11 +502,11 @@
         <td>${esc(ARTICLE_CATS[a.category] || a.category)}</td>
         <td><span class="badge badge--${STATUS_BADGE[a.status]}">${esc(ARTICLE_STATUS[a.status])}</span></td>
         <td>${a.published_at ? dateTime(a.published_at) : "—"}</td>
-        <td class="row-actions">
+        <td><div class="row-actions">
           <a class="link" href="/article.html?slug=${encodeURIComponent(a.slug)}" target="_blank" rel="noopener">Xem</a>
           <button class="link" data-edit-article="${a.id}">Sửa</button>
           <button class="link" data-delete-article="${a.id}">Xoá</button>
-        </td>
+        </div></td>
       </tr>`);
     $("#articlesTable").innerHTML = table(["Ảnh bìa", "Tiêu đề", "Chuyên mục", "Trạng thái", "Ngày đăng", ""], rows, "Chưa có bài viết.");
   }
