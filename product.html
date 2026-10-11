@@ -49,49 +49,44 @@
         const i = l.indexOf(":");
         return i > 0 ? `<dt>${esc(l.slice(0, i))}</dt><dd>${esc(l.slice(i + 1).trim())}</dd>` : `<dd class="full">${esc(l)}</dd>`;
       }).join("")}</dl>`;
-      // Image slider: scroll-snap track (native swipe on touch) + arrows, thumbnails, counter, arrow keys.
+      // Image slider: scroll-snap track (native swipe on touch) + one dot per image.
+      // Hovering (or tapping) a dot shows that image; slides auto-advance every 4s.
       const slider = (srcs, alt) => {
         if (!srcs.length) return '<div class="slider"><div class="slider__track"><div class="slide"><div class="ph"></div></div></div></div>';
-        const many = srcs.length > 1;
         return `
-          <div class="slider" id="slider" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Ảnh sản phẩm ${esc(alt)}">
-            <div class="slider__stage">
-              <div class="slider__track" id="sliderTrack">
-                ${srcs.map((src, i) => `
-                  <div class="slide" role="group" aria-roledescription="slide" aria-label="${i + 1} / ${srcs.length}">
-                    <img src="${esc(src)}" alt="${esc(alt)} – ảnh ${i + 1}" ${i ? 'loading="lazy"' : ""} />${refLabel(src)}
-                  </div>`).join("")}
-              </div>
-              ${many ? `
-                <button class="slider__arrow slider__arrow--prev" data-step="-1" aria-label="Ảnh trước">‹</button>
-                <button class="slider__arrow slider__arrow--next" data-step="1" aria-label="Ảnh sau">›</button>
-                <span class="slider__count" id="sliderCount" aria-live="polite">1 / ${srcs.length}</span>` : ""}
+          <div class="slider" id="slider" role="region" aria-roledescription="carousel" aria-label="Ảnh sản phẩm ${esc(alt)}">
+            <div class="slider__track" id="sliderTrack">
+              ${srcs.map((src, i) => `
+                <div class="slide" role="group" aria-roledescription="slide" aria-label="${i + 1} / ${srcs.length}">
+                  <img src="${esc(src)}" alt="${esc(alt)} – ảnh ${i + 1}" ${i ? 'loading="lazy"' : ""} />${refLabel(src)}
+                </div>`).join("")}
             </div>
-            ${many ? `<div class="slider__thumbs">${srcs.map((src, i) => `
-              <button class="slider__thumb" data-go="${i}" aria-label="Xem ảnh ${i + 1}"${i ? "" : ' aria-current="true"'}><img src="${esc(src)}" alt="" loading="lazy" /></button>`).join("")}</div>` : ""}
+            ${srcs.length > 1 ? `<div class="slider__dots">${srcs.map((_, i) => `
+              <button class="slider__dot" data-go="${i}" aria-label="Xem ảnh ${i + 1}"${i ? "" : ' aria-current="true"'}></button>`).join("")}</div>` : ""}
           </div>`;
       };
       function initSlider() {
         const root = $("#slider"), track = $("#sliderTrack");
-        if (!root || !$(".slider__thumbs", root)) return;
-        const slides = track.children, thumbs = root.querySelectorAll(".slider__thumb");
+        const dots = root ? root.querySelectorAll(".slider__dot") : [];
+        if (!dots.length) return;
+        const count = track.children.length;
         const current = () => Math.round(track.scrollLeft / track.clientWidth);
-        const go = (i) => track.scrollTo({ left: ((i + slides.length) % slides.length) * track.clientWidth, behavior: "smooth" });
-        // Keep counter + thumbnails in sync with swipes as well as clicks.
+        const go = (i) => track.scrollTo({ left: ((i + count) % count) * track.clientWidth, behavior: "smooth" });
+
+        // Dots follow the visible slide, whether it changed by swipe, hover or autoplay.
         track.addEventListener("scroll", () => {
           const i = current();
-          $("#sliderCount").textContent = `${i + 1} / ${slides.length}`;
-          thumbs.forEach((t, j) => t.toggleAttribute("aria-current", j === i));
+          dots.forEach((d, j) => d.toggleAttribute("aria-current", j === i));
         }, { passive: true });
-        root.addEventListener("click", (e) => {
-          const step = e.target.closest("[data-step]"), thumb = e.target.closest("[data-go]");
-          if (step) go(current() + Number(step.dataset.step));
-          if (thumb) go(Number(thumb.dataset.go));
-        });
-        root.addEventListener("keydown", (e) => {
-          if (e.key === "ArrowLeft") { e.preventDefault(); go(current() - 1); }
-          if (e.key === "ArrowRight") { e.preventDefault(); go(current() + 1); }
-        });
+        root.addEventListener("pointerover", (e) => { const d = e.target.closest("[data-go]"); if (d) go(Number(d.dataset.go)); });
+        root.addEventListener("click", (e) => { const d = e.target.closest("[data-go]"); if (d) go(Number(d.dataset.go)); });
+
+        // Autoplay: paused while the pointer is on the slider or the tab is hidden; off for reduced motion.
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        let paused = false;
+        root.addEventListener("pointerenter", () => (paused = true));
+        root.addEventListener("pointerleave", () => (paused = false));
+        setInterval(() => { if (!paused && !document.hidden) go(current() + 1); }, 4000);
       }
       // Gallery = main bottle shot + extra shots (close-up, packaging); the art shot (img2) belongs to the story.
       const images = [p.img, ...(p.gallery || [])].filter(Boolean);

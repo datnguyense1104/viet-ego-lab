@@ -156,28 +156,17 @@ p { margin: 0 0 1em; }
 .pd { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(32px, 5vw, 80px); align-items: start; }
 .pd__gallery { min-width: 0; }
 
-/* Product image slider: CSS scroll-snap gives native swipe; JS adds arrows, thumbs, counter. */
-.slider { outline: none; }
-.slider:focus-visible .slider__stage { box-shadow: 0 0 0 2px var(--accent); }
-.slider__stage { position: relative; }
+/* Product image slider: CSS scroll-snap gives native swipe; JS adds dots (hover/tap) and autoplay. */
 .slider__track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; aspect-ratio: 4 / 5; background: #e8e3d8; }
 .slider__track::-webkit-scrollbar { display: none; }
 .slide { position: relative; flex: 0 0 100%; scroll-snap-align: start; }
 .slide img, .slide .ph { width: 100%; height: 100%; object-fit: cover; }
-.slider__arrow {
-  position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(255,255,255,.85); color: var(--ink); font-size: 26px; line-height: 1; display: grid; place-items: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,.12); transition: background .2s;
-}
-.slider__arrow:hover { background: #fff; }
-.slider__arrow--prev { left: 12px; }
-.slider__arrow--next { right: 12px; }
-.slider__count { position: absolute; right: 12px; bottom: 12px; background: rgba(22,38,27,.6); color: #fff; font-size: 12px; padding: 2px 10px; letter-spacing: .05em; }
-.slider__thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; margin-top: 8px; }
-.slider__thumb { aspect-ratio: 1; overflow: hidden; opacity: .55; outline: 1px solid transparent; transition: opacity .2s; }
-.slider__thumb img { width: 100%; height: 100%; object-fit: cover; }
-.slider__thumb:hover { opacity: .85; }
-.slider__thumb[aria-current] { opacity: 1; outline-color: var(--ink); outline-offset: 2px; }
+.slider__dots { display: flex; justify-content: center; gap: 4px; margin-top: 14px; }
+/* 28px hit area around a 10px dot so hovering/tapping is easy. */
+.slider__dot { width: 28px; height: 28px; display: grid; place-items: center; }
+.slider__dot::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink); background: transparent; transition: background .25s, transform .25s; }
+.slider__dot:hover::before { transform: scale(1.2); }
+.slider__dot[aria-current]::before { background: var(--ink); }
 .pd__info { position: sticky; top: calc(var(--header-h) + 24px); }
 .pd__name { font-size: clamp(36px, 4vw, 56px); margin-bottom: 12px; }
 .pd__price { font-size: 20px; margin-bottom: 24px; }
