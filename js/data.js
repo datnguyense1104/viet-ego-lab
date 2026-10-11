@@ -159,7 +159,7 @@ const ARTICLES = [
   { slug: "com-sen-va-ky-uc-khuu-giac", title: "Cốm, sen và những ký ức được lưu giữ bằng khứu giác",
     category: "huong-viet-va-ky-uc", cover: unsplash("1538998073820-4dfa76300194") },
   { slug: "mui-huong-va-ban-sac-ca-nhan", title: "Mùi hương có thể nói gì về bản sắc cá nhân?",
-    category: "mui-huong-va-ban-sac", cover: unsplash("1726067438466-df7db360f4e3") },
+    category: "mui-huong-va-ban-sac", cover: "images/identity-lotus.webp" },
   { slug: "mui-huong-va-noi-da-xa", title: "Vì sao có những mùi hương khiến ta nhớ về một nơi đã xa?",
     category: "nghe-thuat-mui-huong", cover: unsplash("1536511671359-849531c0a576") },
   { slug: "lua-chon-mui-huong-phu-hop", title: "Nghệ thuật lựa chọn mùi hương phù hợp với chính mình",
