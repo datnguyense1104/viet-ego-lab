@@ -5,7 +5,7 @@ import { supabase } from "./_supabase.js";
 
 const { GEMINI_API_KEY } = process.env;
 // First model is preferred; the rest are fallbacks when it is rate-limited or unavailable.
-const MODELS = (process.env.GEMINI_MODEL || "gemini-3.8-flash,gemini-2.5-flash").split(",").map((m) => m.trim()).filter(Boolean);
+const MODELS = (process.env.GEMINI_MODEL || "gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite").split(",").map((m) => m.trim()).filter(Boolean);
 const RETRYABLE = new Set([404, 429, 500, 503]);
 const MAX_TURNS = 12;
 const MAX_CHARS = 800;

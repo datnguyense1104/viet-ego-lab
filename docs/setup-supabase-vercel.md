@@ -65,7 +65,7 @@ Dùng Google Gemini gói miễn phí. Lấy key tại https://aistudio.google.co
 npx vercel env add GEMINI_API_KEY production
 ```
 
-Tuỳ chọn `GEMINI_MODEL` (danh sách model cách nhau bởi dấu phẩy, model đầu được ưu tiên, các model sau dùng khi bị giới hạn lượt gọi). Mặc định: `gemini-3.8-flash,gemini-2.5-flash`.
+Tuỳ chọn `GEMINI_MODEL` (danh sách model cách nhau bởi dấu phẩy, model đầu được ưu tiên, các model sau dùng khi bị giới hạn lượt gọi). Mặc định: `gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite` (gemini-2.5-* không còn mở cho key mới).
 Chatbot chỉ trả lời về Việt Ego Lab, kiến thức nước hoa và tư vấn mùi hương cá nhân; thông tin sản phẩm lấy trực tiếp từ bảng `products` (sản phẩm đang bật) nên sửa trong /admin là chatbot cập nhật theo (trễ tối đa 5 phút).
 Lưu ý: gói miễn phí của Gemini có thể dùng nội dung hội thoại để cải thiện sản phẩm của Google – không nhập thông tin nhạy cảm.
 
