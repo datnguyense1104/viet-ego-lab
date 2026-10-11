@@ -49,7 +49,50 @@
         const i = l.indexOf(":");
         return i > 0 ? `<dt>${esc(l.slice(0, i))}</dt><dd>${esc(l.slice(i + 1).trim())}</dd>` : `<dd class="full">${esc(l)}</dd>`;
       }).join("")}</dl>`;
-      const frame = (src, alt) => `<div class="frame"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" />${refLabel}</div>`;
+      // Image slider: scroll-snap track (native swipe on touch) + arrows, thumbnails, counter, arrow keys.
+      const slider = (srcs, alt) => {
+        if (!srcs.length) return '<div class="slider"><div class="slider__track"><div class="slide"><div class="ph"></div></div></div></div>';
+        const many = srcs.length > 1;
+        return `
+          <div class="slider" id="slider" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Ảnh sản phẩm ${esc(alt)}">
+            <div class="slider__stage">
+              <div class="slider__track" id="sliderTrack">
+                ${srcs.map((src, i) => `
+                  <div class="slide" role="group" aria-roledescription="slide" aria-label="${i + 1} / ${srcs.length}">
+                    <img src="${esc(src)}" alt="${esc(alt)} – ảnh ${i + 1}" ${i ? 'loading="lazy"' : ""} />${refLabel(src)}
+                  </div>`).join("")}
+              </div>
+              ${many ? `
+                <button class="slider__arrow slider__arrow--prev" data-step="-1" aria-label="Ảnh trước">‹</button>
+                <button class="slider__arrow slider__arrow--next" data-step="1" aria-label="Ảnh sau">›</button>
+                <span class="slider__count" id="sliderCount" aria-live="polite">1 / ${srcs.length}</span>` : ""}
+            </div>
+            ${many ? `<div class="slider__thumbs">${srcs.map((src, i) => `
+              <button class="slider__thumb" data-go="${i}" aria-label="Xem ảnh ${i + 1}"${i ? "" : ' aria-current="true"'}><img src="${esc(src)}" alt="" loading="lazy" /></button>`).join("")}</div>` : ""}
+          </div>`;
+      };
+      function initSlider() {
+        const root = $("#slider"), track = $("#sliderTrack");
+        if (!root || !$(".slider__thumbs", root)) return;
+        const slides = track.children, thumbs = root.querySelectorAll(".slider__thumb");
+        const current = () => Math.round(track.scrollLeft / track.clientWidth);
+        const go = (i) => track.scrollTo({ left: ((i + slides.length) % slides.length) * track.clientWidth, behavior: "smooth" });
+        // Keep counter + thumbnails in sync with swipes as well as clicks.
+        track.addEventListener("scroll", () => {
+          const i = current();
+          $("#sliderCount").textContent = `${i + 1} / ${slides.length}`;
+          thumbs.forEach((t, j) => t.toggleAttribute("aria-current", j === i));
+        }, { passive: true });
+        root.addEventListener("click", (e) => {
+          const step = e.target.closest("[data-step]"), thumb = e.target.closest("[data-go]");
+          if (step) go(current() + Number(step.dataset.step));
+          if (thumb) go(Number(thumb.dataset.go));
+        });
+        root.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowLeft") { e.preventDefault(); go(current() - 1); }
+          if (e.key === "ArrowRight") { e.preventDefault(); go(current() + 1); }
+        });
+      }
       // Gallery = main bottle shot + extra shots (close-up, packaging); the art shot (img2) belongs to the story.
       const images = [p.img, ...(p.gallery || [])].filter(Boolean);
       const storyImage = p.img2 || (p.gallery || [])[0];
@@ -58,7 +101,7 @@
       // 3.3 Product detail: images on one side, info on the other.
       $("#detail").innerHTML = `
         <div class="pd">
-          <div class="pd__gallery">${images.length ? images.slice(0, 5).map((src) => frame(src, p.name)).join("") : '<div class="frame"><div class="ph"></div></div>'}</div>
+          <div class="pd__gallery">${slider(images, p.name)}</div>
           <div class="pd__info">
             <p class="eyebrow"><a href="products.html">Danh mục sản phẩm</a>${p.collection ? " · " + esc(p.collection) : ""}</p>
             <h1 class="pd__name">${esc(p.name)}</h1>
@@ -80,6 +123,8 @@
           </div>
         </div>`;
 
+      initSlider();
+
       if (buyable) {
         let qty = 1;
         $("#detail").addEventListener("click", (e) => {
@@ -100,7 +145,7 @@
               ? blocks(p.story).map((para) => `<p class="lead">${esc(para)}</p>`).join("")
               : `<p class="lead">Câu chuyện về ${esc(p.region)} và nguồn cảm hứng của ${esc(p.name)} ${tbd.toLowerCase()}.</p>`}
           </div>
-          ${storyImage ? `<div class="frame" style="aspect-ratio:4/5"><img src="${esc(storyImage)}" alt="" loading="lazy" />${refLabel}</div>` : ""}
+          ${storyImage ? `<div class="frame" style="aspect-ratio:4/5"><img src="${esc(storyImage)}" alt="" loading="lazy" />${refLabel(storyImage)}</div>` : ""}
         </div>`;
 
       $("#related").innerHTML = PRODUCTS.filter((x) => x.id !== p.id).slice(0, 4).map(Site.productCard).join("");

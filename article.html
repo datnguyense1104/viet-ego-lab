@@ -64,7 +64,7 @@
           <h1 class="title">${esc(a.title)}</h1>
           ${a.excerpt ? `<p class="lead" style="margin:0 auto">${esc(a.excerpt)}</p>` : ""}
         </header>
-        ${a.cover ? `<div class="frame article__cover"><img src="${esc(a.cover)}" alt="" />${refLabel}</div>` : ""}
+        ${a.cover ? `<div class="frame article__cover"><img src="${esc(a.cover)}" alt="" />${refLabel(a.cover)}</div>` : ""}
         <div class="article article__body">
           ${published && a.body
             ? renderBody(a.body, esc)

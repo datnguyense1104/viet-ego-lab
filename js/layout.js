@@ -27,7 +27,10 @@ const Site = (() => {
     if (src) return `<img src="${esc(src)}" alt="${esc(p.name)}" loading="lazy" />`;
     return `<div class="ph"></div>`;
   }
-  const refLabel = '<span class="ref-label">Ảnh minh họa</span>';
+  // Brief: reference (stock) images must be identified. Only Unsplash photos get the caption;
+  // the team's own uploads (Supabase Storage or any other host) are shown as-is.
+  const isStock = (src) => /(^|\/\/)images\.unsplash\.com\//.test(String(src || ""));
+  const refLabel = (src) => (isStock(src) ? '<span class="ref-label">Ảnh minh họa</span>' : "");
 
   function renderChrome(page) {
     const navLinks = NAV.map((n) => `<a href="${n.href}"${n.page === page ? ' aria-current="page"' : ""}>${n.label}</a>`).join("");
@@ -300,7 +303,7 @@ const Site = (() => {
         <a class="card__media" href="${productUrl(p)}" aria-label="${esc(p.name)}">
           <div class="card__img1">${media(p, 1)}</div>
           <div class="card__img2">${media(p, 2)}</div>
-          ${refLabel}
+          ${refLabel(p.img)}
         </a>
         <h3 class="card__name"><a href="${productUrl(p)}">${esc(p.name)}</a></h3>
         <p class="card__desc">${esc(desc)}</p>
@@ -317,7 +320,7 @@ const Site = (() => {
       <article class="post">
         <a class="post__media" href="${articleUrl(a)}" aria-label="${esc(a.title)}">
           ${a.cover ? `<img src="${esc(a.cover)}" alt="" loading="lazy" />` : '<div class="ph"></div>'}
-          ${refLabel}
+          ${refLabel(a.cover)}
           ${soon ? '<span class="post__badge">Sắp ra mắt</span>' : ""}
         </a>
         <p class="eyebrow">${esc(cat?.name || "")}${a.read_minutes ? ` · ${a.read_minutes} phút đọc` : ""}</p>
