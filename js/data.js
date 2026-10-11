@@ -128,10 +128,16 @@ const PRODUCTS = [
     ].join("\n"),
     img: unsplash("1594125311687-3b1b3eafa9f4"), img2: unsplash("1764141738717-896b3365c196"),
   },
-].map((p, i) => ({
+].map((p) => ({
   collection: "", scent_family: "", notes: "", description: "", story: "", usage: "", info: "",
-  price: null, size: "", gallery: [], sort_order: i, ...p,
+  price: null, size: "", gallery: [], ...p,
 }));
+
+// Display order chosen by the team (2026-10-11). Live order comes from products.sort_order in
+// Supabase (editable in /admin); keep this list in sync so the offline fallback matches.
+const DISPLAY_ORDER = ["com-xanh-ha-noi", "long-tra-da-lat", "sen-dong-thap", "phu-sa-cuu-long", "hat-ca-phe-tay-nguyen"];
+PRODUCTS.sort((a, b) => DISPLAY_ORDER.indexOf(a.id) - DISPLAY_ORDER.indexOf(b.id));
+PRODUCTS.forEach((p, i) => (p.sort_order = i));
 
 // Journal: four categories from the brief.
 const JOURNAL_CATEGORIES = [
