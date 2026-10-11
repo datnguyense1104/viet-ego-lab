@@ -83,7 +83,7 @@ const PRODUCTS = [
       "Nhóm hương: Earthy – Green – Woody – Amber", "Mùi hương chủ đạo: Lá dứa, thóc non, khóm chín, cỏ hương bài, gỗ lũa",
       "Phong cách: Mộc mạc, trầm ấm, tự nhiên", "Đối tượng sử dụng: Mọi giới", "Xuất xứ: Việt Nam",
     ].join("\n"),
-    img: unsplash("1733660227163-01bc46e0d7d7"), img2: unsplash("1589562337460-9d825d2cd5a2"),
+    img: unsplash("1733660227163-01bc46e0d7d7"), img2: "images/phu-sa-river.webp",
   },
   {
     // Id kept from the first brief ("Hạt cà phê Tây Nguyên") so existing links keep working.
