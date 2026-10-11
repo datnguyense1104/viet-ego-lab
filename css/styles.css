@@ -133,6 +133,12 @@ p { margin: 0 0 1em; }
 .page-hero .eyebrow { color: rgba(255,255,255,.75); }
 .page-hero .ref-label { left: auto; right: 12px; }
 
+/* Split page hero: text panel on brand green (left), real product photo with no overlay (right). */
+.page-hero--split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); padding: 0; background: var(--dark); }
+.page-hero--split .page-hero__content { order: -1; margin: 0; align-self: center; padding: clamp(48px, 6vw, 96px) clamp(24px, 5vw, 80px) clamp(48px, 6vw, 96px) max(var(--gutter), calc((100vw - var(--max)) / 2)); }
+.page-hero__photo { position: relative; min-height: 380px; }
+.page-hero__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 58%; }
+
 /* ---------- Home: material mosaic (1.2) ---------- */
 .mosaic { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: clamp(90px, 11vw, 150px); gap: 8px; }
 .mosaic .frame:nth-child(1) { grid-column: span 3; grid-row: span 3; }
@@ -345,7 +351,9 @@ p { margin: 0 0 1em; }
   .nav.is-open { transform: none; box-shadow: 0 0 0 100vw rgba(22,38,27,.4); }
   .nav a { padding: 12px 0; border-bottom: 1px solid var(--line); }
   .nav__close { position: absolute; top: 12px; right: 12px; }
-  .split, .pd, .manifesto, .duo { grid-template-columns: 1fr; }
+  .split, .pd, .manifesto, .duo, .page-hero--split { grid-template-columns: 1fr; }
+  .page-hero--split .page-hero__content { padding: 48px var(--gutter); }
+  .page-hero__photo { min-height: 0; aspect-ratio: 16 / 9; }
   .hero--collection .hero__bg { margin-top: -32px; }
   .hero--collection .hero__content { padding-top: 40px; }
   .split--reverse > :first-child { order: 0; }
