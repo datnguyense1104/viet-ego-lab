@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "perfume-web-pied-five.vercel.app" }],
+      "destination": "https://viet-ego-lab.vercel.app/$1",
+      "permanent": true
+    }
+  ]
+}
