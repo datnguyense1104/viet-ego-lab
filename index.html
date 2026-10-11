@@ -26,11 +26,30 @@
 <body>
   <main>
     <!-- 1.1 Hero -->
-    <!-- Product photo: text sits in the empty cream wall at the top so no bottle is covered. -->
-    <section class="hero hero--collection">
-      <div class="hero__bg">
-        <img src="images/hero-collection.jpg" width="1672" height="941" fetchpriority="high"
+    <!-- Rotating product photos. Text sits on a band painted in each photo's own wall colours
+         (sampled left / centre / right), so no bottle is covered and the seam is invisible. -->
+    <section class="hero hero--collection" id="hero">
+      <div class="hero__bands" aria-hidden="true">
+        <span class="is-active" style="--band: linear-gradient(90deg, #e5cbae 0%, #ead3b7 48%, #bba089 100%)"></span>
+        <span style="--band: linear-gradient(90deg, #e6c5a7 0%, #e3c2a2 48%, #ac917a 100%)"></span>
+        <span style="--band: linear-gradient(90deg, #ddc0a2 0%, #e5ccaf 48%, #b59b82 100%)"></span>
+        <span style="--band: linear-gradient(90deg, #e8cbad 0%, #ddbea1 48%, #bea084 100%)"></span>
+        <span style="--band: linear-gradient(90deg, #debea1 0%, #e3c6a9 48%, #ae9175 100%)"></span>
+      </div>
+      <div class="hero__bg" role="region" aria-roledescription="carousel" aria-label="Bộ sưu tập Việt Ego Lab">
+        <img class="is-active" src="images/hero/collection.jpg" width="1672" height="941" fetchpriority="high"
              alt="Năm chai nước hoa Việt Ego Lab: Cốm xanh Hà Nội, Sen Đồng Tháp, Phù Sa Cửu Long, Cà Phê Tây Nguyên, Long Trà Đà Lạt" />
+        <img src="images/hero/com-xanh-ha-noi.jpg" width="1672" height="941" alt="Cốm xanh Hà Nội bên bông lúa non, cốm xanh và cánh sen" />
+        <img src="images/hero/long-tra-da-lat.jpg" width="1672" height="941" alt="Long Trà Đà Lạt bên lá trà, trà khô và hoa trà" />
+        <img src="images/hero/phu-sa-cuu-long.jpg" width="1672" height="941" alt="Phù Sa Cửu Long bên lá dứa, đất phù sa và gỗ lũa" />
+        <img src="images/hero/ca-phe-tay-nguyen.jpg" width="1672" height="941" alt="Cà Phê Tây Nguyên bên hạt cà phê, quả cà phê chín và gỗ" />
+        <div class="hero__dots">
+          <button class="slider__dot" data-hero="0" aria-label="Ảnh 1: Bộ sưu tập" aria-current="true"></button>
+          <button class="slider__dot" data-hero="1" aria-label="Ảnh 2: Cốm xanh Hà Nội"></button>
+          <button class="slider__dot" data-hero="2" aria-label="Ảnh 3: Long Trà Đà Lạt"></button>
+          <button class="slider__dot" data-hero="3" aria-label="Ảnh 4: Phù Sa Cửu Long"></button>
+          <button class="slider__dot" data-hero="4" aria-label="Ảnh 5: Cà Phê Tây Nguyên"></button>
+        </div>
       </div>
       <div class="hero__content">
         <h1 class="hero__brand">VIỆT EGO LAB</h1>
@@ -133,6 +152,38 @@
   <script src="js/data.js"></script>
   <script src="js/layout.js"></script>
   <script>
+    // Hero photo rotation: cross-fade photo + matching colour band; dots switch on hover/tap.
+    // Auto-advances every 5s, paused while the pointer is on the photo, in hidden tabs and for reduced motion.
+    (function initHeroSlider() {
+      const hero = document.getElementById("hero");
+      const photos = hero.querySelectorAll(".hero__bg img");
+      const bands = hero.querySelectorAll(".hero__bands span");
+      const dots = hero.querySelectorAll("[data-hero]");
+      let index = 0, paused = false;
+      const show = (i) => {
+        index = (i + photos.length) % photos.length;
+        [photos, bands].forEach((list) => list.forEach((el, j) => el.classList.toggle("is-active", j === index)));
+        dots.forEach((d, j) => d.toggleAttribute("aria-current", j === index));
+      };
+      const autoplay = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let timer;
+      // Restart the 5s countdown after a manual pick so the chosen photo gets its full time.
+      const schedule = () => {
+        clearInterval(timer);
+        if (autoplay) timer = setInterval(() => { if (!paused && !document.hidden) show(index + 1); }, 5000);
+      };
+      const pick = (e) => {
+        const d = e.target.closest("[data-hero]");
+        if (d && Number(d.dataset.hero) !== index) { show(Number(d.dataset.hero)); schedule(); }
+      };
+      hero.addEventListener("pointerover", pick);
+      hero.addEventListener("click", pick);
+      const stage = hero.querySelector(".hero__bg");
+      stage.addEventListener("pointerenter", () => (paused = true));
+      stage.addEventListener("pointerleave", () => (paused = false));
+      schedule();
+    })();
+
     Site.init({ page: "home" }).then(() => {
       Site.$("#featured").innerHTML = PRODUCTS.map(Site.productCard).join("");
       Site.$("#journalTeaser").innerHTML = ARTICLES.slice(0, 3).map(Site.articleCard).join("");

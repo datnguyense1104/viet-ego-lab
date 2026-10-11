@@ -100,15 +100,25 @@ p { margin: 0 0 1em; }
    centre → right), photo below with its top edge faded into the band. No bottle is ever covered
    and the photo is never cropped. */
 .hero--collection {
-  display: flex; flex-direction: column-reverse; min-height: 0; color: var(--ink);
-  background: linear-gradient(90deg, #e2c9ab 0%, #e9d4b7 48%, #bba089 100%);
+  /* stretch: the photo frame has no in-flow content (photos are stacked absolutely), so with the
+     base hero's centred alignment it would collapse to zero width. */
+  display: flex; flex-direction: column-reverse; align-items: stretch; min-height: 0; color: var(--ink);
+  background: #e5cbae; /* fallback before the first band paints */
 }
+/* One colour band per photo, cross-faded in step with the photos. */
+.hero__bands, .hero__bands span { position: absolute; inset: 0; }
+.hero__bands span { background: var(--band); opacity: 0; transition: opacity .9s ease; }
+.hero__bands span.is-active { opacity: 1; }
 .hero--collection .hero__bg {
-  position: relative; inset: auto; aspect-ratio: 1672 / 941; margin-top: -72px;
+  position: relative; inset: auto; z-index: 1; aspect-ratio: 1672 / 941; margin-top: -72px;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
   mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
 }
+.hero--collection .hero__bg img { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; }
+.hero--collection .hero__bg img.is-active { opacity: 1; }
 .hero--collection .hero__bg::after { display: none; }
+.hero__dots { position: absolute; left: 50%; bottom: clamp(8px, 2vw, 20px); transform: translateX(-50%); z-index: 2; display: flex; gap: 2px; }
+.hero--collection .hero__content { z-index: 2; margin: 0 auto; width: 100%; }
 .hero--collection .hero__content { padding: clamp(36px, 4.5vw, 64px) var(--gutter) 0; }
 .hero--collection .hero__brand { font-size: clamp(40px, 5.6vw, 88px); margin-bottom: 8px; }
 .hero--collection .hero__tagline { margin-bottom: 12px; }
