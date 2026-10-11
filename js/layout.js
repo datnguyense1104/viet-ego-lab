@@ -344,6 +344,7 @@ const Site = (() => {
       Site.closeCart(); Site.closeSearch(); nav.classList.remove("is-open");
     });
     trackView();
+    document.body.appendChild(Object.assign(document.createElement("script"), { src: "js/chatbot.js", defer: true }));
     await Promise.all([loadProducts(), loadArticles()]);
     cart.load();
     renderCart();
