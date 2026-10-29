@@ -330,12 +330,21 @@ const Site = (() => {
     initCart();
     initSearch();
     initNewsletter();
+    // Mobile menu: lock page scroll while open; a tap on the dimmed area outside closes it.
     const nav = $("#nav");
-    $("#menuOpen").addEventListener("click", () => nav.classList.add("is-open"));
-    $("#menuClose").addEventListener("click", () => nav.classList.remove("is-open"));
+    const setMenu = (open) => {
+      nav.classList.toggle("is-open", open);
+      $("#menuOpen").setAttribute("aria-expanded", String(open));
+      document.body.classList.toggle("no-scroll", open);
+    };
+    $("#menuOpen").addEventListener("click", (e) => { e.stopPropagation(); setMenu(true); });
+    $("#menuClose").addEventListener("click", () => setMenu(false));
+    document.addEventListener("click", (e) => {
+      if (nav.classList.contains("is-open") && !nav.contains(e.target)) setMenu(false);
+    });
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      Site.closeCart(); Site.closeSearch(); nav.classList.remove("is-open");
+      Site.closeCart(); Site.closeSearch(); setMenu(false);
     });
     trackView();
     document.body.appendChild(Object.assign(document.createElement("script"), { src: "js/chatbot.js", defer: true }));
