@@ -62,6 +62,9 @@
       showLogin("Tài khoản này không có quyền quản trị.");
       return;
     }
+    // Mark this browser as an admin device so the storefront stops counting its page views.
+    // Kept after logout on purpose: the device is still the admin's.
+    try { localStorage.setItem("adminDevice", "1"); } catch { /* storage blocked */ }
     $("#loginView").hidden = true;
     $("#appView").hidden = false;
     $("#userEmail").textContent = session.user.email;

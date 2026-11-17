@@ -281,6 +281,8 @@ const Site = (() => {
     if (!/^https?:$/.test(location.protocol) || !navigator.sendBeacon) return;
     let vid;
     try {
+      // Browsers that have signed in to /admin are the admin's own devices: don't count them.
+      if (localStorage.getItem("adminDevice")) return;
       vid = localStorage.getItem("vid");
       if (!vid) localStorage.setItem("vid", (vid = crypto.randomUUID()));
     } catch {
